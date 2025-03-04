@@ -7,7 +7,8 @@ let velocidadeComputadorBase = 2;
 let suavizacao = 0.2;
 let fundoImg, imgBola;
 let placarJogador = 0, placarComputador = 0;
-let botoesCriados = false;
+let jogoIniciado = false;
+let vencedor = "";
 
 function definirTamanhos() {
     larguraRaquete = width * 0.02;
@@ -21,16 +22,35 @@ function preload() {
 }
 
 function setup() {
-    createCanvas(windowWidth, windowHeight * 0.8).position(0, (windowHeight - height) / 2);
+    createCanvas(windowWidth, windowHeight).position(0, 0);
     definirTamanhos();
     reiniciarJogo();
-    criarBotoes();
 }
 
 function draw() {
     background(fundoImg);
     desenharPlacar();
     desenharElementos();
+
+    if (vencedor !== "") {
+        fill(255);
+        textSize(width * 0.05);
+        textAlign(CENTER, CENTER);
+        text(`${vencedor} venceu!`, width / 2, height / 2);
+        text("Pressione ENTER para começar", width / 2, height / 1.5);
+        return
+
+
+    }
+
+    if (!jogoIniciado) {
+        fill(255);
+        textSize(width * 0.05);
+        textAlign(CENTER, CENTER);
+        text("Pressione ENTER para começar", width / 2, height / 2);
+        return;
+    }
+
     atualizarBola();
     movimentarJogador();
     movimentarComputador();
@@ -54,10 +74,10 @@ function atualizarBola() {
     bolaX += velocidadeBolaX;
     bolaY += velocidadeBolaY;
     if (bolaY < alturaBarra || bolaY > height - alturaBarra) velocidadeBolaY *= -1;
-    if (colisaoRaquete(jogadorY, 30)) velocidadeBolaX *= -1, modificarVelocidadeBola();
-    if (colisaoRaquete(computadorY, width - 30)) velocidadeBolaX *= -1, modificarVelocidadeBola();
-    if (bolaX < 0) placarComputador++, reiniciarBola();
-    if (bolaX > width) placarJogador++, reiniciarBola();
+    if (colisaoRaquete(jogadorY, 30)) velocidadeBolaX *= -1, aumentarVelocidadeBola();
+    if (colisaoRaquete(computadorY, width - 30)) velocidadeBolaX *= -1, aumentarVelocidadeBola();
+    if (bolaX < 0) { placarComputador++; verificarVencedor(); reiniciarBola(); }
+    if (bolaX > width) { placarJogador++; verificarVencedor(); reiniciarBola(); }
 }
 
 function colisaoRaquete(posicaoY, limiteX) {
@@ -78,31 +98,44 @@ function movimentarComputador() {
 
 function reiniciarJogo() {
     jogadorY = computadorY = alvoJogadorY = alvoComputadorY = height / 2 - alturaRaquete / 2;
+    placarJogador = 0;
+    placarComputador = 0;
+    vencedor = "";
     reiniciarBola();
 }
 
 function reiniciarBola() {
     bolaX = width / 2;
     bolaY = height / 2;
-    velocidadeBolaX = random([-4, -3, 3, 4]);
-    velocidadeBolaY = random([-3, -2, 2, 3]);
+    velocidadeBolaX = random([-6, -5, 5, 6]);
+    velocidadeBolaY = random([-5, -4, 4, 5]);
 }
 
-function modificarVelocidadeBola() {
-    velocidadeBolaX = random(3, 6) * Math.sign(velocidadeBolaX);
-    velocidadeBolaY = random(2, 5) * Math.sign(velocidadeBolaY);
+function aumentarVelocidadeBola() {
+    velocidadeBolaX *= 1.1;
+    velocidadeBolaY *= 1.1;
 }
 
-function criarBotoes() {
-    if (botoesCriados) return;
-    botoesCriados = true;
-    criarBotao("⬆", 50, height - 150, () => alvoJogadorY -= velocidadeJogador * 10);
-    criarBotao("⬇", 50, height - 80, () => alvoJogadorY += velocidadeJogador * 10);
+function verificarVencedor() {
+    if (placarJogador >= 3) {
+        vencedor = "Jogador";
+        jogoIniciado = false;
+    } else if (placarComputador >= 3) {
+        vencedor = "Computador";
+        jogoIniciado = false;
+    }
 }
 
-function criarBotao(label, x, y, acao) {
-    let botao = createButton(label);
-    botao.position(x, y);
-    botao.size(60, 60);
-    botao.mousePressed(acao);
+function keyPressed() {
+    if (keyCode === ENTER) {
+        if (!jogoIniciado) {
+            jogoIniciado = true;
+            if (vencedor !== "") reiniciarJogo();
+        }
+    }
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+    definirTamanhos();
 }
